@@ -52,18 +52,45 @@ body { background-color: var(--bg-base); color: var(--text-main); min-height: 10
 
 .view-section { display: flex; flex-direction: column; margin-bottom: 2rem;}
 
-/* Metrics */
-.compact-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; flex-shrink: 0; }
-.metric-card { background: var(--card-bg); border: var(--glass-border); border-radius: 8px; padding: 0.6rem; display: flex; align-items: center; gap: 0.5rem; }
-.metric-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; }
-.metric-card.balance .metric-icon { background: rgba(94, 106, 210, 0.1); color: var(--primary); }
-.metric-card.income .metric-icon { background: rgba(34, 197, 94, 0.1); color: var(--success); }
-.metric-card.expense .metric-icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-.metric-info h3 { font-size: 0.65rem; color: var(--text-muted); font-weight: 400; text-transform: uppercase; }
-.metric-info h2 { font-size: 1rem; font-weight: 600; }
-.metric-card.balance h2 { color: var(--primary); }
-.metric-card.income h2 { color: var(--success); }
-.metric-card.expense h2 { color: var(--danger); }
+/* Compact Metrics Row */
+.compact-metrics-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border: var(--glass-border);
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+.eye-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    font-size: 1.1rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.eye-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-main); }
+.mini-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    border-left: 1px solid rgba(255,255,255,0.05);
+}
+.mini-metric:nth-child(2) { border-left: none; }
+.mini-title { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;}
+.mini-val { font-size: 0.95rem; font-weight: 600; white-space: nowrap; }
+.mini-val.inc { color: var(--success); }
+.mini-val.exp { color: var(--danger); }
 
 /* Main Working Area */
 .grid-split { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; flex: 1; min-height: 0; }
@@ -160,7 +187,9 @@ body { background-color: var(--bg-base); color: var(--text-main); min-height: 10
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .grid-split { grid-template-columns: 1fr; gap: 1.5rem; }
-    .compact-metrics { grid-template-columns: 1fr; gap: 1rem; }
+    .compact-metrics-row { padding: 0.4rem; gap: 0.2rem; }
+    .mini-val { font-size: 0.85rem; }
+    .mini-title { font-size: 0.55rem; }
     .compact-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
     .header-left { width: 100%; justify-content: space-between; }
     .top-balance-card { text-align: left; }

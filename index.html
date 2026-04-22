@@ -25,14 +25,12 @@
                     <h1>GRAB</h1>
                 </div>
                 <div style="display:flex; gap:0.5rem;">
+                    <button class="cat-btn" style="border-color:var(--text-main); color:var(--text-main); font-weight:600;" onclick="toggleReportsView()" title="Aylık Raporlar"><i class="fas fa-chart-pie"></i> Raporlar</button>
                     <button class="cat-btn" style="border-color:var(--primary); color:var(--text-main);" onclick="exportData()" title="Yedek Al (Bilgisayara İndir)"><i class="fas fa-download"></i> İndir</button>
                     <button class="cat-btn" style="border-color:var(--primary); color:var(--text-main);" onclick="document.getElementById('import-file').click()" title="Yedek Yükle (Eski Verileri Getir)"><i class="fas fa-upload"></i> Yükle</button>
                     <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
                     <button class="cat-btn" style="border-color:var(--danger); color:var(--danger);" onclick="resetData()" title="Tümünü Sıfırla"><i class="fas fa-trash"></i></button>
                 </div>
-            </div>
-            <div class="header-right">
-                <button class="cat-btn" id="toggle-vis-btn" onclick="toggleVisibility()" title="Rakamları Göster/Gizle" style="font-size: 1.2rem; border:none; padding:0.5rem;"><i class="fas fa-eye-slash"></i></button>
             </div>
         </header>
 
@@ -43,28 +41,20 @@
 
         <!-- MAIN VIEW PORT -->
         <div id="view-main" class="view-section">
-            <!-- Compact Metrics Grid -->
-            <section class="metrics-grid compact-metrics">
-                <div class="metric-card balance">
-                    <div class="metric-icon"><i class="fas fa-wallet"></i></div>
-                    <div class="metric-info">
-                        <h3>Bütçe</h3>
-                        <h2 id="total-balance" class="mono blur-text">*** ₺</h2>
-                    </div>
+            <!-- Compact Metrics Row -->
+            <section class="compact-metrics-row">
+                <button id="toggle-vis-btn" onclick="toggleVisibility()" class="eye-btn" title="Gizle/Göster"><i class="fas fa-eye-slash"></i></button>
+                <div class="mini-metric">
+                    <span class="mini-title">Bütçe</span>
+                    <span id="total-balance" class="mini-val mono">*** ₺</span>
                 </div>
-                <div class="metric-card income">
-                    <div class="metric-icon"><i class="fas fa-arrow-down"></i></div>
-                    <div class="metric-info">
-                        <h3>Gelir</h3>
-                        <h2 id="total-income" class="mono blur-text">*** ₺</h2>
-                    </div>
+                <div class="mini-metric">
+                    <span class="mini-title">Gelir</span>
+                    <span id="total-income" class="mini-val mono inc">*** ₺</span>
                 </div>
-                <div class="metric-card expense">
-                    <div class="metric-icon"><i class="fas fa-arrow-up"></i></div>
-                    <div class="metric-info">
-                        <h3>Gider</h3>
-                        <h2 id="total-expense" class="mono blur-text">*** ₺</h2>
-                    </div>
+                <div class="mini-metric">
+                    <span class="mini-title">Gider</span>
+                    <span id="total-expense" class="mini-val mono exp">*** ₺</span>
                 </div>
             </section>
 
