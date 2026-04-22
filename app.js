@@ -15,6 +15,21 @@ let state = {
 };
 let isEditCategoryMode = false;
 let currentReportDate = new Date(); // Tracks the currently shown month for reports
+let isVisible = false;
+
+function toggleVisibility() {
+    isVisible = !isVisible;
+    const btn = document.getElementById('toggle-vis-btn');
+    if(btn) {
+        btn.innerHTML = isVisible ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        if(isVisible) {
+            btn.style.color = "var(--success)";
+        } else {
+            btn.style.color = "";
+        }
+    }
+    render();
+}
 
 // DOM Elements
 const totalBalanceEl = document.getElementById('total-balance');
@@ -286,9 +301,9 @@ function render() {
         else expense += t.amount;
     });
     
-    totalIncomeEl.innerText = formatMoneyPrecise(income);
-    totalExpenseEl.innerText = formatMoneyPrecise(expense);
-    totalBalanceEl.innerText = formatMoneyPrecise(income - expense);
+    totalIncomeEl.innerText = isVisible ? formatMoneyPrecise(income) : '*** ₺';
+    totalExpenseEl.innerText = isVisible ? formatMoneyPrecise(expense) : '*** ₺';
+    totalBalanceEl.innerText = isVisible ? formatMoneyPrecise(income - expense) : '*** ₺';
     
     transactionsListEl.innerHTML = '';
     if(state.transactions.length === 0) {

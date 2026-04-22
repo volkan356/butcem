@@ -40,7 +40,7 @@ body { background-color: var(--bg-base); color: var(--text-main); min-height: 10
 .header-left { display: flex; align-items: center; gap: 2rem; }
 .logo { display: flex; align-items: center; gap: 0.5rem; }
 .logo-icon { font-size: 1.5rem; color: var(--primary); }
-.logo h1 { font-size: 1.5rem; font-weight: 700; }
+.logo h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; }
 .logo h1 span { color: var(--primary); }
 .top-nav { display: flex; gap: 0.3rem; background: rgba(0,0,0,0.5); padding: 0.3rem; border-radius: 8px; border: var(--glass-border); }
 .nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; }
@@ -53,13 +53,15 @@ body { background-color: var(--bg-base); color: var(--text-main); min-height: 10
 .view-section { display: flex; flex-direction: column; margin-bottom: 2rem;}
 
 /* Metrics */
-.compact-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem; flex-shrink: 0; }
-.metric-card { background: var(--card-bg); border: var(--glass-border); border-radius: 12px; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
-.metric-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1rem; }
+.compact-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; flex-shrink: 0; }
+.metric-card { background: var(--card-bg); border: var(--glass-border); border-radius: 8px; padding: 0.6rem; display: flex; align-items: center; gap: 0.5rem; }
+.metric-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; }
+.metric-card.balance .metric-icon { background: rgba(94, 106, 210, 0.1); color: var(--primary); }
 .metric-card.income .metric-icon { background: rgba(34, 197, 94, 0.1); color: var(--success); }
 .metric-card.expense .metric-icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-.metric-info h3 { font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
-.metric-info h2 { font-size: 1.3rem; font-weight: 600; }
+.metric-info h3 { font-size: 0.65rem; color: var(--text-muted); font-weight: 400; text-transform: uppercase; }
+.metric-info h2 { font-size: 1rem; font-weight: 600; }
+.metric-card.balance h2 { color: var(--primary); }
 .metric-card.income h2 { color: var(--success); }
 .metric-card.expense h2 { color: var(--danger); }
 
@@ -128,7 +130,7 @@ body { background-color: var(--bg-base); color: var(--text-main); min-height: 10
 .pivot-wrapper::-webkit-scrollbar { width: 8px; height: 8px;}
 .pivot-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
-.pivot-table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 0.8rem; }
+.pivot-table { border-collapse: collapse; width: max-content; font-size: 0.8rem; margin: 0 auto; }
 .pivot-table th, .pivot-table td { border: 1px solid rgba(255,255,255,0.08); padding: 0.4rem 0.6rem; text-align: right; white-space: nowrap; }
 /* Sticky Headers & Columns */
 .pivot-table thead th { position: sticky; top: 0; background: #1e1e1e; z-index: 2; font-weight: 600; color: var(--text-muted); text-align: center;}
