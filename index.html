@@ -51,6 +51,16 @@
                 </div>
             </section>
 
+            <!-- 3-Day Summary (MOVED HERE) -->
+            <div class="glass-panel list-panel" style="padding:0.5rem; margin-bottom:1rem;">
+                <div class="panel-header tight" style="margin-bottom:0.3rem;">
+                    <h2 style="font-size:0.95rem;"><i class="fas fa-calendar-day"></i> Son 3 Gün Özeti</h2>
+                </div>
+                <div class="list-container minimal-list" id="recent-days-list" style="max-height: none; overflow: visible; padding:0;">
+                    <!-- JS injects 3 days -->
+                </div>
+            </div>
+
             <!-- Main Workspace Matrix -->
             <div class="main-content grid-split">
                 <!-- Left Pane: Input Form -->
@@ -69,11 +79,12 @@
                                 <input type="text" inputmode="numeric" id="t-amount" class="mono-input compact-input" placeholder="0" oninput="formatAmountInput(this)">
                             </div>
                             <div class="form-group flex-1">
-                                <label style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
                                     <span>Tarih</span>
-                                    <div style="display:flex; gap:0.2rem;">
-                                        <button type="button" class="cat-btn" style="padding:0.1rem 0.3rem; font-size:0.6rem; margin:0; background:rgba(255,255,255,0.1);" onclick="setYesterday()">Dün</button>
-                                        <button type="button" class="cat-btn" style="padding:0.1rem 0.3rem; font-size:0.6rem; margin:0;" onclick="document.getElementById('t-date').value=''">Bugün</button>
+                                    <div style="display:flex; gap:0.3rem;">
+                                        <button type="button" class="cat-btn" style="padding:0.3rem 0.6rem; font-size:0.8rem; margin:0; background:rgba(255,255,255,0.05);" onclick="setDayOffset(-2)">Önc. Gün</button>
+                                        <button type="button" class="cat-btn" style="padding:0.3rem 0.6rem; font-size:0.8rem; margin:0; background:rgba(255,255,255,0.1);" onclick="setDayOffset(-1)">Dün</button>
+                                        <button type="button" class="cat-btn" style="padding:0.3rem 0.6rem; font-size:0.8rem; margin:0;" onclick="document.getElementById('t-date').value=''">Bugün</button>
                                     </div>
                                 </label>
                                 <input type="date" id="t-date" class="compact-input">
@@ -101,15 +112,6 @@
 
                 <!-- Right Pane: Panels -->
                 <div class="lists-pane v-stack">
-                    <!-- 3-Day Summary -->
-                    <div class="glass-panel list-panel" style="flex:0; padding-bottom:0.5rem;">
-                        <div class="panel-header tight">
-                            <h2><i class="fas fa-calendar-day"></i> Son 3 Gün Özeti</h2>
-                        </div>
-                        <div class="list-container minimal-list" id="recent-days-list" style="max-height: none; overflow: visible;">
-                            <!-- JS injects 3 days -->
-                        </div>
-                    </div>
 
                     <!-- AI Predictions -->
                     <div class="glass-panel list-panel flex-1">

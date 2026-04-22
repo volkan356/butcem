@@ -29,14 +29,12 @@ function toggleVisibility() {
         }
     }
     render();
-}
-
-function setYesterday() {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yyyy = yesterday.getFullYear();
-    const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
-    const dd = String(yesterday.getDate()).padStart(2, '0');
+function setDayOffset(offsetDays) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
     document.getElementById('t-date').value = `${yyyy}-${mm}-${dd}`;
 }
 
@@ -338,23 +336,26 @@ function renderRecentDaysSummary() {
         }
     });
 
-    let html = '';
+    let html = '<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.5rem;">';
     const dayNames = ['Bugün', 'Dün', 'Önceki Gün'];
     
     daysData.forEach((data, index) => {
-        const dateStr = data.dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+        const dateStr = data.dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
         html += `
-            <div class="list-item" style="padding: 0.4rem 0.6rem;">
-                <div class="item-info">
-                    <h4 style="font-size:0.85rem;">${dayNames[index]} <span class="cat-tag">${dateStr}</span></h4>
+            <div class="list-item" style="padding: 0.5rem; flex-direction:column; align-items:flex-start; justify-content:center; gap:0.4rem; background:rgba(255,255,255,0.02);">
+                <h4 style="font-size:0.85rem; text-align:center; width:100%; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.3rem; margin-bottom:0.2rem;">${dayNames[index]} <span class="cat-tag" style="font-size:0.65rem;">${dateStr}</span></h4>
+                <div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem;">
+                    <span style="color:var(--text-muted); font-size:0.65rem;">GELİR</span>
+                    <span class="inc mono">${formatMoneyPrecise(data.income)}</span>
                 </div>
-                <div class="item-amount" style="display:flex; gap:1rem; font-size:0.85rem; justify-content:flex-end;">
-                    <div style="text-align:right;"><span style="color:var(--text-muted); font-size:0.6rem; display:block;">GELİR</span><span class="inc" style="font-family: 'JetBrains Mono', monospace;">${formatMoneyPrecise(data.income)}</span></div>
-                    <div style="text-align:right;"><span style="color:var(--text-muted); font-size:0.6rem; display:block;">GİDER</span><span class="exp" style="font-family: 'JetBrains Mono', monospace;">${formatMoneyPrecise(data.expense)}</span></div>
+                <div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem;">
+                    <span style="color:var(--text-muted); font-size:0.65rem;">GİDER</span>
+                    <span class="exp mono">${formatMoneyPrecise(data.expense)}</span>
                 </div>
             </div>
         `;
     });
+    html += '</div>';
     
     container.innerHTML = html;
 }
