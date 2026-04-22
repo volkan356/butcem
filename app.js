@@ -31,6 +31,15 @@ function toggleVisibility() {
     render();
 }
 
+function setYesterday() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yyyy = yesterday.getFullYear();
+    const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const dd = String(yesterday.getDate()).padStart(2, '0');
+    document.getElementById('t-date').value = `${yyyy}-${mm}-${dd}`;
+}
+
 // DOM Elements
 const totalBalanceEl = document.getElementById('total-balance');
 const totalIncomeEl = document.getElementById('total-income');
@@ -170,7 +179,14 @@ function addManualTransaction() {
     if(!amount || isNaN(amount)) { alert("Lütfen geçerli bir tutar giriniz."); return; }
     if(!category) { categoryWarning.style.display = 'inline'; return; }
 
-    const dateToSave = manualDate ? new Date(manualDate).toISOString() : new Date().toISOString();
+    let dateToSave;
+    if (manualDate) {
+        const [y, m, d] = manualDate.split('-');
+        const localDate = new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid timezone shift
+        dateToSave = localDate.toISOString();
+    } else {
+        dateToSave = new Date().toISOString();
+    }
 
     const newTx = {
         id: Date.now().toString(),
@@ -293,6 +309,56 @@ function generateAIPredictions() {
     return insights.sort((a,b) => b.total - a.total);
 }
 
+function renderRecentDaysSummary() {
+    const container = document.getElementById('recent-days-list');
+    if (!container) return;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const daysData = [];
+    for(let i=0; i<3; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        daysData.push({
+            dateObj: d,
+            income: 0,
+            expense: 0
+        });
+    }
+
+    state.transactions.forEach(t => {
+        const txDate = new Date(t.date);
+        const txDay = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+        
+        const diffDays = Math.round((today - txDay) / (1000 * 60 * 60 * 24));
+        if(diffDays >= 0 && diffDays < 3) {
+            if(t.type === 'income') daysData[diffDays].income += t.amount;
+            else daysData[diffDays].expense += t.amount;
+        }
+    });
+
+    let html = '';
+    const dayNames = ['Bugün', 'Dün', 'Önceki Gün'];
+    
+    daysData.forEach((data, index) => {
+        const dateStr = data.dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+        html += `
+            <div class="list-item" style="padding: 0.4rem 0.6rem;">
+                <div class="item-info">
+                    <h4 style="font-size:0.85rem;">${dayNames[index]} <span class="cat-tag">${dateStr}</span></h4>
+                </div>
+                <div class="item-amount" style="display:flex; gap:1rem; font-size:0.85rem; justify-content:flex-end;">
+                    <div style="text-align:right;"><span style="color:var(--text-muted); font-size:0.6rem; display:block;">GELİR</span><span class="inc" style="font-family: 'JetBrains Mono', monospace;">${formatMoneyPrecise(data.income)}</span></div>
+                    <div style="text-align:right;"><span style="color:var(--text-muted); font-size:0.6rem; display:block;">GİDER</span><span class="exp" style="font-family: 'JetBrains Mono', monospace;">${formatMoneyPrecise(data.expense)}</span></div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
 // Main Render
 function render() {
     let income = 0; let expense = 0;
@@ -304,6 +370,8 @@ function render() {
     totalIncomeEl.innerText = isVisible ? formatMoneyPrecise(income) : '*** ₺';
     totalExpenseEl.innerText = isVisible ? formatMoneyPrecise(expense) : '*** ₺';
     totalBalanceEl.innerText = isVisible ? formatMoneyPrecise(income - expense) : '*** ₺';
+    
+    renderRecentDaysSummary();
     
     transactionsListEl.innerHTML = '';
     if(state.transactions.length === 0) {
