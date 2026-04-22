@@ -29,6 +29,8 @@ function toggleVisibility() {
         }
     }
     render();
+}
+
 function setDayOffset(offsetDays) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDays);
