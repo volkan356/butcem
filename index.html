@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Akıllı Bütçe & Envanter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="compact-header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-wallet logo-icon"></i>
+                    <h1>Bütçe<span>AI</span></h1>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="cat-btn" style="border-color:var(--primary); color:var(--text-main);" onclick="exportData()" title="Yedek Al (Bilgisayara İndir)"><i class="fas fa-download"></i> İndir</button>
+                    <button class="cat-btn" style="border-color:var(--primary); color:var(--text-main);" onclick="document.getElementById('import-file').click()" title="Yedek Yükle (Eski Verileri Getir)"><i class="fas fa-upload"></i> Yükle</button>
+                    <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+                    <button class="cat-btn" style="border-color:var(--danger); color:var(--danger);" onclick="resetData()" title="Tümünü Sıfırla"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="top-balance-card">
+                <p>Toplam Bütçe</p>
+                <h2 id="total-balance" class="mono">0.00 ₺</h2>
+            </div>
+        </header>
+
+        <div id="voice-feedback" class="voice-feedback hidden">
+            <div class="listen-waves"><span></span><span></span><span></span><span></span></div>
+            <span id="voice-text">Dinliyorum...</span>
+        </div>
+
+        <!-- MAIN VIEW PORT -->
+        <div id="view-main" class="view-section">
+            <!-- Compact Metrics Grid -->
+            <section class="metrics-grid compact-metrics">
+                <div class="metric-card income">
+                    <div class="metric-icon"><i class="fas fa-arrow-down"></i></div>
+                    <div class="metric-info">
+                        <h3>Aylık Gelir</h3>
+                        <h2 id="total-income" class="mono">0.00 ₺</h2>
+                    </div>
+                </div>
+                <div class="metric-card expense">
+                    <div class="metric-icon"><i class="fas fa-arrow-up"></i></div>
+                    <div class="metric-info">
+                        <h3>Aylık Gider</h3>
+                        <h2 id="total-expense" class="mono">0.00 ₺</h2>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Workspace Matrix -->
+            <div class="main-content grid-split">
+                <!-- Left Pane: Input Form -->
+                <aside class="entry-pane">
+                    <div class="glass-panel tight-panel" style="height:100%;">
+                        <div class="form-group row-group tight-btn-group">
+                            <button id="type-inc" class="type-btn active" onclick="setTxType('income')">Gelir</button>
+                            <button id="type-exp" class="type-btn" onclick="setTxType('expense')">Gider</button>
+                        </div>
+                        <input type="hidden" id="t-type" value="income">
+                        
+                        <!-- Moved Amount, Date and Desc above Category for fast POS-like workflow -->
+                        <div class="form-inline-group" style="margin-top:0.5rem;">
+                            <div class="form-group flex-1">
+                                <label>Tutar (₺)</label>
+                                <input type="text" inputmode="numeric" id="t-amount" class="mono-input compact-input" placeholder="0" oninput="formatAmountInput(this)">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Tarih</label>
+                                <input type="date" id="t-date" class="compact-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Açıklama</label>
+                            <input type="text" id="t-desc" class="compact-input" placeholder="Notlar...">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0.2rem; margin-top:0.5rem;">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Kategori Seç <span id="category-warning" class="text-xs text-danger" style="display:none;">(Zorunlu)</span></span>
+                                <button type="button" class="cat-btn" style="padding:0.1rem 0.4rem; font-size:0.7rem; margin:0;" onclick="toggleEditCategories()"><i class="fas fa-cog"></i> Düzenle</button>
+                            </label>
+                            <div id="category-container" class="category-grid compact-cat">
+                                <!-- JS injects category buttons -->
+                            </div>
+                            <input type="hidden" id="t-category" value="">
+                        </div>
+                        <!-- Submit button removed for instant category-click workflow -->
+                    </div>
+                </aside>
+
+                <!-- Right Pane: Panels -->
+                <div class="lists-pane v-stack">
+                    <!-- AI Predictions -->
+                    <div class="glass-panel list-panel flex-1">
+                        <div class="panel-header tight">
+                            <h2><i class="fas fa-brain"></i> AI Analiz</h2>
+                        </div>
+                        <div class="list-container smart-list minimal-list" id="ai-predictions-list"></div>
+                    </div>
+
+                    <!-- Recent Txs -->
+                    <div class="glass-panel list-panel flex-1">
+                        <div class="panel-header tight">
+                            <h2><i class="fas fa-list"></i> Son İşlemler</h2>
+                        </div>
+                        <div class="list-container minimal-list" id="transactions-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXCEL PIVOT TABLE AT THE BOTTOM -->
+        <div id="view-reports" class="view-section" style="margin-top:2rem;">
+            <div class="glass-panel reports-panel">
+                <div class="reports-header compact">
+                    <h3><i class="fas fa-file-excel"></i> Kategori x Gün Analizi</h3>
+                    <div class="reports-filters month-navigator flex align-center" style="display:flex; align-items:center; gap:0.5rem;">
+                        <button class="cat-btn" style="padding:0.4rem 0.8rem; margin:0;" onclick="changeReportMonth(-1)"><i class="fas fa-chevron-left"></i> Önceki Ay</button>
+                        <h4 id="report-month-label" style="min-width:140px; text-align:center; margin:0; color:var(--text-main);">Ay</h4>
+                        <button class="cat-btn" style="padding:0.4rem 0.8rem; margin:0;" onclick="changeReportMonth(1)">Sonraki Ay <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <!-- Pivot Table Container -->
+                <div class="pivot-wrapper" id="pivot-container">
+                    <!-- JS INJECTS 3 TABLES HERE -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice FAB -->
+    <button id="voice-btn" class="fab-voice compact-fab" title="Sesli Komut">
+        <i class="fas fa-microphone"></i>
+    </button>
+
+    <script src="app.js"></script>
+    <script src="voice.js"></script>
+</body>
+</html>
