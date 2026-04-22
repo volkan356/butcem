@@ -438,7 +438,7 @@ function renderReports() {
     summaryHTML += `<th>Genel Toplam</th></tr></thead><tbody>`;
 
     // Row 1: Income
-    summaryHTML += `<tr><th>Günlük Giren (Gelir)</th>`;
+    summaryHTML += `<tr><th>Gelir</th>`;
     let totalIn = 0;
     for(let d=0; d<daysInMonth; d++) {
         const val = incData.colTotals[d];
@@ -448,7 +448,7 @@ function renderReports() {
     summaryHTML += `<td class="td-total inc">${formatMoney(totalIn)}</td></tr>`;
 
     // Row 2: Expense
-    summaryHTML += `<tr><th>Günlük Çıkan (Gider)</th>`;
+    summaryHTML += `<tr><th>Gider</th>`;
     let totalOut = 0;
     for(let d=0; d<daysInMonth; d++) {
         const val = expData.colTotals[d];
@@ -458,7 +458,7 @@ function renderReports() {
     summaryHTML += `<td class="td-total exp">${formatMoney(totalOut)}</td></tr>`;
 
     // Row 3: Net Balance
-    summaryHTML += `<tr><th style="font-size: 0.9rem; color: #fff; background: rgba(255,255,255,0.05);">📅 KÂR / ZARAR DURUMU (NET)</th>`;
+    summaryHTML += `<tr><th style="font-size: 0.9rem; color: #fff; background: rgba(255,255,255,0.05);">NET</th>`;
     let totalNet = 0;
     for(let d=0; d<daysInMonth; d++) {
         const val = incData.colTotals[d] - expData.colTotals[d];
