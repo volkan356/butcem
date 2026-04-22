@@ -18,8 +18,8 @@ git remote add origin https://github.com/volkan356/butcem.git
 
 echo [BILGI] Guncellemeler Github veritabanina gonderiliyor, lutfen bekleyin...
 git add .
-git commit -m "Auto Update: Yeni ozellikler"
-git push -u origin main
+git commit -m "Auto Update: Yeni ozellikler ve hatasiz bot"
+git push -f -u origin main
 
 echo.
 if %ERRORLEVEL% EQU 0 (
