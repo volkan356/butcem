@@ -1,12 +1,22 @@
 let savedCats = JSON.parse(localStorage.getItem('vb_categories'));
-const defaultExpCats = ['emrah', 'sandviç', 'yemek', 'migros', 'metro', 'dükkan', 'Ev', 'Kişisel', 'fırça', 'yasar', 'meron', 'Barut', 'Part', 'Kahve', 'kira', 'Ekrem abi', 'Türkmenler', 'Kap', 'Temizlik', 'Çikolata', 'maaş', 'harun'];
+const defaultExpCats = ['emrah', 'sandviç', 'yemek', 'migros', 'metro', 'dükkan', 'Ev', 'Kişisel', 'fırça', 'yasar', 'meron', 'Barut', 'Part', 'Kahve', 'kira', 'Ekrem abi', 'Türkmenler', 'Kap', 'Temizlik', 'Çikolata', 'harun'];
 
 if (!savedCats || !savedCats.expense.includes('emrah')) {
     savedCats = {
-        income: ['Kart', 'Nakit'],
+        income: ['Kart', 'Nakit', 'Maaş'],
         expense: defaultExpCats
     };
     localStorage.setItem('vb_categories', JSON.stringify(savedCats));
+} else {
+    // Migration: Move 'maaş' from expense to income if it exists
+    const maasIdx = savedCats.expense.findIndex(c => c.toLowerCase() === 'maaş');
+    if (maasIdx !== -1) {
+        savedCats.expense.splice(maasIdx, 1);
+        if (!savedCats.income.find(c => c.toLowerCase() === 'maaş')) {
+            savedCats.income.push('Maaş');
+        }
+        localStorage.setItem('vb_categories', JSON.stringify(savedCats));
+    }
 }
 
 let state = {
