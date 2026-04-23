@@ -163,7 +163,6 @@ function deleteCategory(type, catName) {
 function changeReportMonth(delta) {
     currentReportDate.setMonth(currentReportDate.getMonth() + delta);
     renderReports();
-    renderAIPredictions();
 }
 
 // Add Transaction
@@ -275,64 +274,189 @@ function importData(event) {
     event.target.value = '';
 }
 
-// SMART AI LOGIC (COMPARATIVE)
-function generateAIPredictions() {
-    const year = currentReportDate.getFullYear();
-    const month = currentReportDate.getMonth();
+// --- AI ASSISTANT LOGIC ---
+function openAIAssistantModal() {
+    const modal = document.getElementById('ai-assistant-modal');
+    const content = document.getElementById('ai-assistant-content');
     
-    // Prev month
-    const prevDate = new Date(year, month - 1, 1);
-    const prevYear = prevDate.getFullYear();
-    const prevMonth = prevDate.getMonth();
+    content.innerHTML = '<div style="text-align:center; padding: 3rem; color:var(--text-muted);"><i class="fas fa-circle-notch fa-spin fa-2x"></i><br><br>Veriler Analiz Ediliyor...</div>';
+    modal.classList.remove('hidden');
 
-    const currentMonthTxs = state.transactions.filter(t => {
-        const d = new Date(t.date);
-        return d.getFullYear() === year && d.getMonth() === month && t.type === 'expense';
-    });
+    setTimeout(() => {
+        content.innerHTML = buildComprehensiveAIReport();
+    }, 50);
+}
 
-    const prevMonthTxs = state.transactions.filter(t => {
-        const d = new Date(t.date);
-        return d.getFullYear() === prevYear && d.getMonth() === prevMonth && t.type === 'expense';
-    });
+function closeAIAssistantModal() {
+    const modal = document.getElementById('ai-assistant-modal');
+    if(modal) modal.classList.add('hidden');
+}
 
-    const currentTotal = currentMonthTxs.reduce((sum, t) => sum + t.amount, 0);
-    const prevTotal = prevMonthTxs.reduce((sum, t) => sum + t.amount, 0);
-
-    const currentGroups = {};
-    currentMonthTxs.forEach(t => {
-        const cat = t.category || "Diğer";
-        if(!currentGroups[cat]) currentGroups[cat] = 0;
-        currentGroups[cat] += t.amount;
-    });
-
-    const prevGroups = {};
-    prevMonthTxs.forEach(t => {
-        const cat = t.category || "Diğer";
-        if(!prevGroups[cat]) prevGroups[cat] = 0;
-        prevGroups[cat] += t.amount;
-    });
-
-    const insights = [];
-    for(const cat in currentGroups) {
-        const currVal = currentGroups[cat];
-        const prevVal = prevGroups[cat] || 0;
-        const diff = currVal - prevVal;
-        insights.push({ category: cat, currVal, prevVal, diff });
+function closeAIAssistantModalOutside(event) {
+    if (event.target.id === 'ai-assistant-modal') {
+        closeAIAssistantModal();
     }
+}
+
+function buildComprehensiveAIReport() {
+    const now = new Date();
+    const clearTime = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const today = clearTime(now);
     
-    for(const cat in prevGroups) {
-        if(!currentGroups[cat]) {
-            insights.push({ category: cat, currVal: 0, prevVal: prevGroups[cat], diff: -prevGroups[cat] });
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+    const sameDayLastMonth = new Date(today); sameDayLastMonth.setMonth(sameDayLastMonth.getMonth() - 1);
+    
+    const sevenDaysAgo = new Date(today); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    const fourteenDaysAgo = new Date(today); fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+    
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+    let todayInc = 0, todayExp = 0;
+    let yesterdayInc = 0;
+    let lastMonthSameDayInc = 0;
+    
+    let last7Inc = 0, last7Exp = 0;
+    let prev7Inc = 0, prev7Exp = 0;
+
+    let currMonthExpGroups = {};
+    let currMonthExpCounts = {};
+    let prevMonthExpGroups = {};
+
+    let currMonthIncGroups = {};
+    let prevMonthIncGroups = {};
+
+    state.transactions.forEach(t => {
+        const tDate = clearTime(new Date(t.date));
+        const amount = t.amount;
+        const cat = t.category || "Diğer";
+        const isInc = t.type === 'income';
+
+        // Daily
+        if (tDate.getTime() === today.getTime()) {
+            if(isInc) todayInc += amount; else todayExp += amount;
+        }
+        if (tDate.getTime() === yesterday.getTime() && isInc) yesterdayInc += amount;
+        if (tDate.getTime() === sameDayLastMonth.getTime() && isInc) lastMonthSameDayInc += amount;
+
+        // Weekly
+        if (tDate >= sevenDaysAgo && tDate <= today) {
+            if(isInc) last7Inc += amount; else last7Exp += amount;
+        } else if (tDate >= fourteenDaysAgo && tDate <= new Date(sevenDaysAgo.getTime() - 86400000)) {
+            if(isInc) prev7Inc += amount; else prev7Exp += amount;
+        }
+
+        // Monthly (Current Month)
+        if (tDate >= currentMonthStart && tDate <= today) {
+            if(isInc) {
+                currMonthIncGroups[cat] = (currMonthIncGroups[cat] || 0) + amount;
+            } else {
+                currMonthExpGroups[cat] = (currMonthExpGroups[cat] || 0) + amount;
+                currMonthExpCounts[cat] = (currMonthExpCounts[cat] || 0) + 1;
+            }
+        }
+        
+        // Monthly (Previous Month)
+        if (tDate >= prevMonthStart && tDate <= prevMonthEnd) {
+            if(isInc) {
+                prevMonthIncGroups[cat] = (prevMonthIncGroups[cat] || 0) + amount;
+            } else {
+                prevMonthExpGroups[cat] = (prevMonthExpGroups[cat] || 0) + amount;
+            }
+        }
+    });
+
+    const getTrendBadge = (curr, prev, isIncome) => {
+        const diff = curr - prev;
+        if (diff === 0) return `<div class="trend-badge trend-neutral">Aynı</div>`;
+        const isUp = diff > 0;
+        const isGood = isUp === isIncome; 
+        const icon = isUp ? "fa-arrow-up" : "fa-arrow-down";
+        const badgeColor = isGood ? "color:var(--success); background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3);" 
+                                  : "color:var(--danger); background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3);";
+        return `<div class="trend-badge" style="${badgeColor}"><i class="fas ${icon}"></i> ${formatMoneyPrecise(Math.abs(diff))}</div>`;
+    };
+
+    let html = "";
+
+    // 1. Günlük Kazanç Analizi
+    html += `<div class="ai-card">
+        <h3 class="ai-card-title"><i class="fas fa-sun"></i> Günlük Kazanç Analizi</h3>
+        <div class="ai-grid">
+            <div class="ai-stat-box">
+                <span class="ai-stat-label">Bugün Kazanç</span>
+                <span class="ai-stat-val inc">${formatMoneyPrecise(todayInc)}</span>
+            </div>
+            <div class="ai-stat-box" style="justify-content:center;">
+                <span class="ai-stat-label" style="margin-bottom:0.2rem;">Düne Göre Fark</span>
+                ${getTrendBadge(todayInc, yesterdayInc, true)}
+            </div>
+        </div>
+        <div class="ai-grid">
+            <div class="ai-stat-box" style="grid-column: span 2; flex-direction:row; align-items:center; justify-content:space-between;">
+                <span class="ai-stat-label">Geçen Ayın Aynı Gününe Göre Fark</span>
+                ${getTrendBadge(todayInc, lastMonthSameDayInc, true)}
+            </div>
+        </div>
+    </div>`;
+
+    // 2. Haftalık Özet
+    html += `<div class="ai-card">
+        <h3 class="ai-card-title"><i class="fas fa-calendar-week"></i> Son 7 Günlük Özet</h3>
+        <div class="list-item" style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); margin-bottom:0.4rem;">
+            <div class="item-info"><h4 style="font-size:0.9rem;">Toplam Gelir</h4><p style="font-size:0.75rem;">Önceki 7 gün: ${formatMoney(prev7Inc)}₺</p></div>
+            ${getTrendBadge(last7Inc, prev7Inc, true)}
+        </div>
+        <div class="list-item" style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03);">
+            <div class="item-info"><h4 style="font-size:0.9rem;">Toplam Gider</h4><p style="font-size:0.75rem;">Önceki 7 gün: ${formatMoney(prev7Exp)}₺</p></div>
+            ${getTrendBadge(last7Exp, prev7Exp, false)}
+        </div>
+    </div>`;
+
+    // 3. Gelir Analizi (Aylık)
+    html += `<div class="ai-card">
+        <h3 class="ai-card-title"><i class="fas fa-chart-line"></i> Bu Ayki Gelir Analizi</h3>`;
+    let hasIncome = false;
+    for (let cat in currMonthIncGroups) {
+        hasIncome = true;
+        let curr = currMonthIncGroups[cat];
+        let prev = prevMonthIncGroups[cat] || 0;
+        html += `<div class="list-item" style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); margin-bottom:0.4rem;">
+            <div class="item-info"><h4 style="font-size:0.9rem;">${cat}</h4><p style="font-size:0.75rem;">Geçen Ay: ${formatMoney(prev)}₺</p></div>
+            ${getTrendBadge(curr, prev, true)}
+        </div>`;
+    }
+    if (!hasIncome) html += `<div class="empty-state" style="padding:0.5rem;">Bu ay gelir kaydı yok.</div>`;
+    html += `</div>`;
+
+    // 4. Gider Analizi (Tekrar Edenler)
+    html += `<div class="ai-card">
+        <h3 class="ai-card-title"><i class="fas fa-sync-alt"></i> Düzenli Gider Analizi (3+ Alım)</h3>`;
+    let hasRecurringExp = false;
+    let recurringInsights = [];
+    for (let cat in currMonthExpCounts) {
+        if (currMonthExpCounts[cat] >= 3) {
+            hasRecurringExp = true;
+            let curr = currMonthExpGroups[cat];
+            let prev = prevMonthExpGroups[cat] || 0;
+            recurringInsights.push({ cat, curr, prev });
         }
     }
+    
+    if (!hasRecurringExp) {
+        html += `<div class="empty-state" style="padding:0.5rem;">Bu ay 3 ve daha fazla kez tekrarlanan bir gider kaleminiz yok.</div>`;
+    } else {
+        recurringInsights.sort((a,b) => b.curr - a.curr).forEach(item => {
+            html += `<div class="list-item" style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); margin-bottom:0.4rem;">
+                <div class="item-info"><h4 style="font-size:0.9rem;">${item.cat} <span class="cat-tag" style="background:rgba(239,68,68,0.15); color:var(--danger);">${currMonthExpCounts[item.cat]} kez</span></h4><p style="font-size:0.75rem;">Geçen Ay: ${formatMoney(item.prev)}₺</p></div>
+                ${getTrendBadge(item.curr, item.prev, false)}
+            </div>`;
+        });
+    }
+    html += `</div>`;
 
-    return {
-        currentTotal,
-        prevTotal,
-        insights: insights.sort((a,b) => b.diff - a.diff),
-        monthName: currentReportDate.toLocaleString('tr-TR', { month: 'long' }),
-        prevMonthName: prevDate.toLocaleString('tr-TR', { month: 'long' })
-    };
+    return html;
 }
 
 function renderRecentDaysSummary() {
@@ -422,65 +546,6 @@ function render() {
                 </div>
             `;
         });
-    }
-
-    renderAIPredictions();
-}
-
-function renderAIPredictions() {
-    const aiData = generateAIPredictions();
-    aiPredictionsListEl.innerHTML = '';
-    
-    if(aiData.currentTotal === 0 && aiData.prevTotal === 0) {
-        aiPredictionsListEl.innerHTML = `<div class="empty-state" style="padding-top:2rem;">Bu ay ve geçen aya ait yeterli veri bulunmuyor...</div>`;
-    } else {
-        let diffTotal = aiData.currentTotal - aiData.prevTotal;
-        let percentTotal = aiData.prevTotal > 0 ? (Math.abs(diffTotal) / aiData.prevTotal * 100).toFixed(0) : (aiData.currentTotal > 0 ? 100 : 0);
-        
-        let summaryText = "";
-        if (diffTotal > 0) {
-            summaryText = `<strong>${aiData.monthName}</strong> ayında toplam gideriniz geçen aya (${aiData.prevMonthName}) göre <strong>%${percentTotal} arttı</strong>.`;
-        } else if (diffTotal < 0) {
-            summaryText = `<strong>${aiData.monthName}</strong> ayında toplam gideriniz geçen aya (${aiData.prevMonthName}) göre <strong>%${percentTotal} azaldı</strong>. Harika!`;
-        } else {
-            summaryText = `<strong>${aiData.monthName}</strong> ayında toplam gideriniz geçen ayla <strong>tamamen aynı</strong>.`;
-        }
-
-        let html = `<div style="margin-bottom:1rem; padding:0.5rem; background:rgba(94, 106, 210, 0.1); border-radius:8px; border:1px solid rgba(94, 106, 210, 0.3);">
-            <p class="ai-summary-text" style="margin-bottom:0;">${summaryText}</p>
-        </div>`;
-        
-        // Find top 3 increases
-        let topIncreases = aiData.insights.filter(i => i.diff > 0).slice(0, 3);
-        // Find top 2 decreases
-        let topDecreases = [...aiData.insights].sort((a,b) => a.diff - b.diff).filter(i => i.diff < 0).slice(0, 2);
-        
-        let toShow = [...topIncreases, ...topDecreases];
-        
-        if (toShow.length === 0) {
-             html += `<div class="empty-state">Kategori bazında belirgin bir değişim yok.</div>`;
-        } else {
-            toShow.forEach(item => {
-                let isUp = item.diff > 0;
-                let icon = isUp ? "fa-arrow-up" : "fa-arrow-down";
-                let colorCls = isUp ? "trend-up" : "trend-down";
-                let diffText = formatMoneyPrecise(Math.abs(item.diff));
-                
-                html += `
-                    <div class="list-item" style="padding: 0.6rem 0.8rem; margin-bottom: 0.4rem; background: rgba(0,0,0,0.3);">
-                        <div class="item-info">
-                            <h4 style="font-size: 0.95rem;">${item.category}</h4>
-                            <p style="font-size: 0.75rem; opacity:0.8;">Bu Ay: <strong>${formatMoney(item.currVal)}₺</strong> | Geçen: ${formatMoney(item.prevVal)}₺</p>
-                        </div>
-                        <div class="trend-badge ${colorCls}">
-                            <i class="fas ${icon}"></i> ${diffText}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        
-        aiPredictionsListEl.innerHTML = html;
     }
 }
 

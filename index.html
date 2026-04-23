@@ -18,13 +18,15 @@
 
     <div class="app-container">
         
-        <!-- Header -->
         <header class="compact-header">
-            <div class="header-left" style="width: 100%; justify-content: center;">
+            <div class="header-left" style="width: 100%; justify-content: space-between;">
                 <div class="logo">
                     <i class="fas fa-wallet logo-icon"></i>
                     <h1>GRAB</h1>
                 </div>
+                <button class="ai-trigger-btn" onclick="openAIAssistantModal()">
+                    <i class="fas fa-robot"></i> AI Asistan
+                </button>
             </div>
         </header>
 
@@ -114,13 +116,7 @@
                 <!-- Right Pane: Panels -->
                 <div class="lists-pane v-stack">
 
-                    <!-- AI Predictions -->
-                    <div class="glass-panel list-panel flex-1">
-                        <div class="panel-header tight">
-                            <h2><i class="fas fa-brain"></i> AI Analiz</h2>
-                        </div>
-                        <div class="list-container smart-list minimal-list" id="ai-predictions-list"></div>
-                    </div>
+                    <!-- (AI Predictions panel moved to Modal) -->
 
                     <!-- Recent Txs -->
                     <div class="glass-panel list-panel flex-1">
@@ -190,6 +186,20 @@
             </div>
             <div class="list-container minimal-list" id="modal-transaction-list" style="max-height: 50vh;">
                 <!-- JS injects transactions here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Modal -->
+    <div id="ai-assistant-modal" class="modal-overlay hidden" onclick="closeAIAssistantModalOutside(event)">
+        <div class="glass-panel modal-content ai-dashboard" onclick="event.stopPropagation()">
+            <div class="panel-header tight" style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+                <h2 style="font-size: 1.2rem; color: var(--primary);"><i class="fas fa-robot"></i> Yapay Zeka Asistanı</h2>
+                <button class="delete-btn" onclick="closeAIAssistantModal()" style="font-size: 1.2rem;"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="ai-scrollable-content" id="ai-assistant-content" style="overflow-y: auto; flex: 1; padding-right: 5px; display: flex; flex-direction: column; gap: 1rem;">
+                <!-- JS Injects AI Insights Here -->
             </div>
         </div>
     </div>

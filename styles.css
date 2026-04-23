@@ -140,7 +140,22 @@ body { background-color: var(--bg-base); color: var(--text-main); min-height: 10
 .item-info p { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;}
 .cat-tag { background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.65rem; color: #cbd5e1; margin-left: 0.3rem;}
 
-/* AI Insight Trend Badges */
+/* AI Insight Trend Badges & Cards */
+.ai-trigger-btn { background: rgba(94, 106, 210, 0.2); border: 1px solid var(--primary); color: var(--primary); padding: 0.4rem 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;}
+.ai-trigger-btn:hover { background: var(--primary); color: #fff; }
+
+.ai-dashboard { max-width: 600px; width: 95%; max-height: 90vh; }
+.ai-scrollable-content::-webkit-scrollbar { width: 4px; }
+.ai-scrollable-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+.ai-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; }
+.ai-card-title { font-size: 0.95rem; color: var(--primary); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.4rem; font-weight: 600;}
+
+.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem;}
+.ai-stat-box { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem;}
+.ai-stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;}
+.ai-stat-val { font-size: 1.1rem; font-weight: 700; }
+
 .trend-badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.4rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-left: auto;}
 .trend-up { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 .trend-down { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
