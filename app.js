@@ -594,6 +594,55 @@ function renderChartAndCategoryButtons(expTxs) {
             context.textAlign = "center";
             context.fillText("Bu ay gider kaydı bulunmuyor.", ctx.canvas.width/2, ctx.canvas.height/2);
         } else {
+            const outLabelsPlugin = {
+                id: 'outLabelsPlugin',
+                afterDraw: (chart) => {
+                    const chartCtx = chart.ctx;
+                    const meta = chart.getDatasetMeta(0);
+                    if(!meta.data || meta.data.length === 0) return;
+                    
+                    chartCtx.save();
+                    meta.data.forEach((element, index) => {
+                        const val = chart.data.datasets[0].data[index];
+                        if(!val) return;
+                        
+                        const midAngle = element.startAngle + (element.endAngle - element.startAngle) / 2;
+                        const radius = element.outerRadius;
+                        const x = element.x;
+                        const y = element.y;
+                        
+                        // Calculate line coordinates
+                        const startX = x + Math.cos(midAngle) * radius;
+                        const startY = y + Math.sin(midAngle) * radius;
+                        
+                        // Distance from chart edge
+                        const extend = 15;
+                        const elbowX = x + Math.cos(midAngle) * (radius + extend);
+                        const elbowY = y + Math.sin(midAngle) * (radius + extend);
+                        
+                        const isRight = Math.cos(midAngle) >= 0;
+                        const endX = elbowX + (isRight ? 15 : -15);
+                        
+                        chartCtx.beginPath();
+                        chartCtx.moveTo(startX, startY);
+                        chartCtx.lineTo(elbowX, elbowY);
+                        chartCtx.lineTo(endX, elbowY);
+                        chartCtx.strokeStyle = chart.data.datasets[0].backgroundColor[index];
+                        chartCtx.lineWidth = 1.5;
+                        chartCtx.stroke();
+                        
+                        chartCtx.font = "500 11px 'Outfit'";
+                        chartCtx.fillStyle = "#cbd5e1"; // var(--text-muted)
+                        chartCtx.textAlign = isRight ? 'left' : 'right';
+                        chartCtx.textBaseline = 'middle';
+                        
+                        const textX = endX + (isRight ? 4 : -4);
+                        chartCtx.fillText(chart.data.labels[index], textX, elbowY);
+                    });
+                    chartCtx.restore();
+                }
+            };
+
             expenseChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -605,9 +654,13 @@ function renderChartAndCategoryButtons(expTxs) {
                         hoverOffset: 4
                     }]
                 },
+                plugins: [outLabelsPlugin],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: 30 // Make room for the lines and text
+                    },
                     plugins: {
                         legend: {
                             display: false // Hide default legend, we use buttons
