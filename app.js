@@ -163,6 +163,7 @@ function deleteCategory(type, catName) {
 function changeReportMonth(delta) {
     currentReportDate.setMonth(currentReportDate.getMonth() + delta);
     renderReports();
+    renderAIPredictions();
 }
 
 // Add Transaction
@@ -274,42 +275,64 @@ function importData(event) {
     event.target.value = '';
 }
 
-// SMART AI LOGIC
+// SMART AI LOGIC (COMPARATIVE)
 function generateAIPredictions() {
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-    const recent = state.transactions.filter(t => new Date(t.date) >= thirtyDaysAgo && t.type === 'expense');
+    const year = currentReportDate.getFullYear();
+    const month = currentReportDate.getMonth();
     
-    const groups = {};
-    recent.forEach(t => {
-        const key = t.category;
-        if(!groups[key]) groups[key] = [];
-        groups[key].push(t);
+    // Prev month
+    const prevDate = new Date(year, month - 1, 1);
+    const prevYear = prevDate.getFullYear();
+    const prevMonth = prevDate.getMonth();
+
+    const currentMonthTxs = state.transactions.filter(t => {
+        const d = new Date(t.date);
+        return d.getFullYear() === year && d.getMonth() === month && t.type === 'expense';
     });
-    
+
+    const prevMonthTxs = state.transactions.filter(t => {
+        const d = new Date(t.date);
+        return d.getFullYear() === prevYear && d.getMonth() === prevMonth && t.type === 'expense';
+    });
+
+    const currentTotal = currentMonthTxs.reduce((sum, t) => sum + t.amount, 0);
+    const prevTotal = prevMonthTxs.reduce((sum, t) => sum + t.amount, 0);
+
+    const currentGroups = {};
+    currentMonthTxs.forEach(t => {
+        const cat = t.category || "Diğer";
+        if(!currentGroups[cat]) currentGroups[cat] = 0;
+        currentGroups[cat] += t.amount;
+    });
+
+    const prevGroups = {};
+    prevMonthTxs.forEach(t => {
+        const cat = t.category || "Diğer";
+        if(!prevGroups[cat]) prevGroups[cat] = 0;
+        prevGroups[cat] += t.amount;
+    });
+
     const insights = [];
-    for(const key in groups) {
-        const txs = groups[key];
-        txs.sort((a,b) => new Date(a.date) - new Date(b.date));
-        
-        let diffDays = 1;
-        if (txs.length >= 2) {
-            const firstDate = new Date(txs[0].date);
-            const lastDate = new Date(txs[txs.length - 1].date);
-            diffDays = Math.max((lastDate - firstDate) / (1000 * 60 * 60 * 24), 1);
-        }
-        
-        const totalAmount = txs.reduce((sum, t) => sum + t.amount, 0);
-        const dailyAvg = totalAmount / diffDays;
-        
-        insights.push({ 
-            category: key, 
-            count: txs.length, 
-            total: totalAmount, 
-            daily: dailyAvg 
-        });
+    for(const cat in currentGroups) {
+        const currVal = currentGroups[cat];
+        const prevVal = prevGroups[cat] || 0;
+        const diff = currVal - prevVal;
+        insights.push({ category: cat, currVal, prevVal, diff });
     }
-    return insights.sort((a,b) => b.total - a.total);
+    
+    for(const cat in prevGroups) {
+        if(!currentGroups[cat]) {
+            insights.push({ category: cat, currVal: 0, prevVal: prevGroups[cat], diff: -prevGroups[cat] });
+        }
+    }
+
+    return {
+        currentTotal,
+        prevTotal,
+        insights: insights.sort((a,b) => b.diff - a.diff),
+        monthName: currentReportDate.toLocaleString('tr-TR', { month: 'long' }),
+        prevMonthName: prevDate.toLocaleString('tr-TR', { month: 'long' })
+    };
 }
 
 function renderRecentDaysSummary() {
@@ -401,24 +424,63 @@ function render() {
         });
     }
 
-    const insights = generateAIPredictions();
+    renderAIPredictions();
+}
+
+function renderAIPredictions() {
+    const aiData = generateAIPredictions();
     aiPredictionsListEl.innerHTML = '';
-    if(insights.length === 0) {
-        aiPredictionsListEl.innerHTML = `<div class="empty-state" style="padding-top:2rem;">Gelecek tahminleri için veriler analiz ediliyor...</div>`;
+    
+    if(aiData.currentTotal === 0 && aiData.prevTotal === 0) {
+        aiPredictionsListEl.innerHTML = `<div class="empty-state" style="padding-top:2rem;">Bu ay ve geçen aya ait yeterli veri bulunmuyor...</div>`;
     } else {
-        let tableHTML = `<div class="pivot-wrapper" style="border:none; background:transparent;"><table class="pivot-table" style="width:100%;">
-            <thead><tr><th style="text-align:left;">Kategori</th><th>Alım Sayısı</th><th>Toplam</th><th>Günlük Ort.</th></tr></thead><tbody>`;
+        let diffTotal = aiData.currentTotal - aiData.prevTotal;
+        let percentTotal = aiData.prevTotal > 0 ? (Math.abs(diffTotal) / aiData.prevTotal * 100).toFixed(0) : (aiData.currentTotal > 0 ? 100 : 0);
         
-        insights.forEach(insight => {
-            tableHTML += `<tr>
-                <td style="text-align:left;"><i class="fas fa-sparkles text-main" style="margin-right:4px;"></i> <strong>${insight.category}</strong></td>
-                <td class="mono">${insight.count} Kez</td>
-                <td class="td-val exp">${formatMoneyPrecise(insight.total)}</td>
-                <td class="td-total exp" style="background:transparent;">${formatMoneyPrecise(insight.daily)}</td>
-            </tr>`;
-        });
-        tableHTML += `</tbody></table></div>`;
-        aiPredictionsListEl.innerHTML = tableHTML;
+        let summaryText = "";
+        if (diffTotal > 0) {
+            summaryText = `<strong>${aiData.monthName}</strong> ayında toplam gideriniz geçen aya (${aiData.prevMonthName}) göre <strong>%${percentTotal} arttı</strong>.`;
+        } else if (diffTotal < 0) {
+            summaryText = `<strong>${aiData.monthName}</strong> ayında toplam gideriniz geçen aya (${aiData.prevMonthName}) göre <strong>%${percentTotal} azaldı</strong>. Harika!`;
+        } else {
+            summaryText = `<strong>${aiData.monthName}</strong> ayında toplam gideriniz geçen ayla <strong>tamamen aynı</strong>.`;
+        }
+
+        let html = `<div style="margin-bottom:1rem; padding:0.5rem; background:rgba(94, 106, 210, 0.1); border-radius:8px; border:1px solid rgba(94, 106, 210, 0.3);">
+            <p class="ai-summary-text" style="margin-bottom:0;">${summaryText}</p>
+        </div>`;
+        
+        // Find top 3 increases
+        let topIncreases = aiData.insights.filter(i => i.diff > 0).slice(0, 3);
+        // Find top 2 decreases
+        let topDecreases = [...aiData.insights].sort((a,b) => a.diff - b.diff).filter(i => i.diff < 0).slice(0, 2);
+        
+        let toShow = [...topIncreases, ...topDecreases];
+        
+        if (toShow.length === 0) {
+             html += `<div class="empty-state">Kategori bazında belirgin bir değişim yok.</div>`;
+        } else {
+            toShow.forEach(item => {
+                let isUp = item.diff > 0;
+                let icon = isUp ? "fa-arrow-up" : "fa-arrow-down";
+                let colorCls = isUp ? "trend-up" : "trend-down";
+                let diffText = formatMoneyPrecise(Math.abs(item.diff));
+                
+                html += `
+                    <div class="list-item" style="padding: 0.6rem 0.8rem; margin-bottom: 0.4rem; background: rgba(0,0,0,0.3);">
+                        <div class="item-info">
+                            <h4 style="font-size: 0.95rem;">${item.category}</h4>
+                            <p style="font-size: 0.75rem; opacity:0.8;">Bu Ay: <strong>${formatMoney(item.currVal)}₺</strong> | Geçen: ${formatMoney(item.prevVal)}₺</p>
+                        </div>
+                        <div class="trend-badge ${colorCls}">
+                            <i class="fas ${icon}"></i> ${diffText}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        aiPredictionsListEl.innerHTML = html;
     }
 }
 
