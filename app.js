@@ -292,20 +292,22 @@ function generateAIPredictions() {
         const txs = groups[key];
         txs.sort((a,b) => new Date(a.date) - new Date(b.date));
         
+        let diffDays = 1;
         if (txs.length >= 2) {
             const firstDate = new Date(txs[0].date);
             const lastDate = new Date(txs[txs.length - 1].date);
-            const diffDays = Math.max((lastDate - firstDate) / (1000 * 60 * 60 * 24), 1);
-            const totalAmount = txs.reduce((sum, t) => sum + t.amount, 0);
-            const dailyAvg = totalAmount / diffDays;
-            
-            insights.push({ 
-                category: key, 
-                count: txs.length, 
-                total: totalAmount, 
-                daily: dailyAvg 
-            });
+            diffDays = Math.max((lastDate - firstDate) / (1000 * 60 * 60 * 24), 1);
         }
+        
+        const totalAmount = txs.reduce((sum, t) => sum + t.amount, 0);
+        const dailyAvg = totalAmount / diffDays;
+        
+        insights.push({ 
+            category: key, 
+            count: txs.length, 
+            total: totalAmount, 
+            daily: dailyAvg 
+        });
     }
     return insights.sort((a,b) => b.total - a.total);
 }
