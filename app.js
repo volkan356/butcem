@@ -16,6 +16,7 @@ let state = {
 let isEditCategoryMode = false;
 let currentReportDate = new Date(); // Tracks the currently shown month for reports
 let isVisible = false;
+let expenseChartInstance = null;
 
 function toggleVisibility() {
     isVisible = !isVisible;
@@ -544,6 +545,172 @@ function renderReports() {
 
     // Inject all into container
     containerEl.innerHTML = expData.html + incData.html + summaryHTML;
+
+    // --- CHART & CATEGORY BUTTONS LOGIC ---
+    renderChartAndCategoryButtons(expTxs);
+}
+
+function renderChartAndCategoryButtons(expTxs) {
+    // 1. Group expenses by category
+    const categoryTotals = {};
+    expTxs.forEach(t => {
+        const cat = t.category || "Diğer";
+        if(!categoryTotals[cat]) categoryTotals[cat] = 0;
+        categoryTotals[cat] += t.amount;
+    });
+
+    // 2. Sort categories by amount (descending)
+    const sortedCategories = Object.keys(categoryTotals).sort((a,b) => categoryTotals[b] - categoryTotals[a]);
+    
+    // Prepare data for Chart.js
+    const labels = [];
+    const data = [];
+    const backgroundColors = [
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', 
+        '#10b981', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', 
+        '#8b5cf6', '#d946ef', '#f43f5e', '#ec4899', '#9f1239'
+    ];
+    const bgColorsToUse = [];
+
+    sortedCategories.forEach((cat, index) => {
+        labels.push(cat);
+        data.push(categoryTotals[cat]);
+        bgColorsToUse.push(backgroundColors[index % backgroundColors.length]);
+    });
+
+    // 3. Render Chart
+    const ctx = document.getElementById('expenseChart');
+    if (ctx) {
+        if (expenseChartInstance) {
+            expenseChartInstance.destroy();
+        }
+        
+        if (labels.length === 0) {
+            // No data, clear canvas basically
+            const context = ctx.getContext('2d');
+            context.clearRect(0, 0, ctx.width, ctx.height);
+            context.font = "14px Outfit";
+            context.fillStyle = "#94a3b8";
+            context.textAlign = "center";
+            context.fillText("Bu ay gider kaydı bulunmuyor.", ctx.canvas.width/2, ctx.canvas.height/2);
+        } else {
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: bgColorsToUse,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false // Hide default legend, we use buttons
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += formatMoneyPrecise(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    }
+
+    // 4. Render Category Buttons
+    const buttonsContainer = document.getElementById('chart-category-buttons');
+    if (buttonsContainer) {
+        buttonsContainer.innerHTML = '';
+        sortedCategories.forEach((cat, index) => {
+            const amount = categoryTotals[cat];
+            const color = bgColorsToUse[index];
+            const btn = document.createElement('button');
+            btn.className = 'cat-btn';
+            btn.style.display = 'flex';
+            btn.style.flexDirection = 'column';
+            btn.style.alignItems = 'center';
+            btn.style.gap = '0.2rem';
+            btn.style.padding = '0.5rem 0.8rem';
+            btn.style.borderLeft = `3px solid ${color}`;
+            btn.style.background = 'rgba(255,255,255,0.05)';
+            
+            btn.innerHTML = `
+                <span style="font-weight: 500;">${cat}</span>
+                <span class="mono" style="font-size: 0.75rem; color: ${color};">${formatMoney(amount)} ₺</span>
+            `;
+            
+            btn.onclick = () => openCategoryModal(cat, expTxs);
+            buttonsContainer.appendChild(btn);
+        });
+    }
+}
+
+// --- MODAL LOGIC ---
+function openCategoryModal(categoryName, monthTxs) {
+    const modal = document.getElementById('category-modal');
+    const titleEl = document.getElementById('modal-category-title');
+    const listEl = document.getElementById('modal-transaction-list');
+    const totalEl = document.getElementById('modal-total-amount');
+    
+    titleEl.innerHTML = `<i class="fas fa-box" style="margin-right:0.5rem; color:var(--primary);"></i> ${categoryName} Detayı`;
+    
+    // Filter transactions for this category
+    const catTxs = monthTxs.filter(t => (t.category || "Diğer") === categoryName);
+    
+    // Sort by date descending
+    catTxs.sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    listEl.innerHTML = '';
+    let totalAmount = 0;
+    
+    if (catTxs.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">Kayıt bulunamadı.</div>`;
+    } else {
+        catTxs.forEach(t => {
+            totalAmount += t.amount;
+            const dateStr = new Date(t.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' });
+            listEl.innerHTML += `
+                <div class="list-item" style="padding: 0.8rem; margin-bottom: 0.4rem; background: rgba(0,0,0,0.3);">
+                    <div class="item-info">
+                        <h4 style="font-size: 0.95rem;">${t.desc}</h4>
+                        <p style="font-size: 0.75rem;"><i class="far fa-calendar-alt"></i> ${dateStr}</p>
+                    </div>
+                    <div class="item-amount">
+                        <span class="amount-val exp">${formatMoneyPrecise(t.amount)}</span>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    totalEl.innerText = formatMoneyPrecise(totalAmount);
+    modal.classList.remove('hidden');
+}
+
+function closeCategoryModal() {
+    document.getElementById('category-modal').classList.add('hidden');
+}
+
+function closeCategoryModalOutside(event) {
+    if (event.target.id === 'category-modal') {
+        closeCategoryModal();
+    }
 }
 
 // Boot Sequence

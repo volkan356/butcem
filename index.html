@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=2.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="mesh-bg">
@@ -152,6 +153,16 @@
                     </div>
                 </div>
                 
+                <!-- Chart Container -->
+                <div class="chart-container" style="position: relative; height:300px; width:100%; max-width:600px; margin: 0 auto 1rem auto; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: var(--glass-border);">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+                
+                <!-- Chart Category Buttons -->
+                <div id="chart-category-buttons" class="category-grid compact-cat" style="justify-content: center; margin-bottom: 2rem;">
+                    <!-- JS INJECTS CATEGORY BUTTONS HERE -->
+                </div>
+
                 <!-- Pivot Table Container -->
                 <div class="pivot-wrapper" id="pivot-container">
                     <!-- JS INJECTS 3 TABLES HERE -->
@@ -164,6 +175,24 @@
     <button id="voice-btn" class="fab-voice compact-fab" title="Sesli Komut">
         <i class="fas fa-microphone"></i>
     </button>
+
+    <!-- Category Detail Modal -->
+    <div id="category-modal" class="modal-overlay hidden" onclick="closeCategoryModalOutside(event)">
+        <div class="glass-panel modal-content" onclick="event.stopPropagation()">
+            <div class="panel-header tight" style="margin-bottom: 1rem;">
+                <h2 id="modal-category-title" style="font-size: 1.1rem; color: var(--text-main);"><i class="fas fa-box"></i> Kategori Detayı</h2>
+                <button class="delete-btn" onclick="closeCategoryModal()" style="font-size: 1.2rem;"><i class="fas fa-times"></i></button>
+            </div>
+            <!-- Modal Summary -->
+            <div id="modal-summary" style="display:flex; justify-content:space-between; margin-bottom: 1rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Toplam Harcama:</span>
+                <span id="modal-total-amount" class="exp mono" style="font-weight: bold; font-size: 1rem;">0 ₺</span>
+            </div>
+            <div class="list-container minimal-list" id="modal-transaction-list" style="max-height: 50vh;">
+                <!-- JS injects transactions here -->
+            </div>
+        </div>
+    </div>
 
     <script src="app.js?v=2.2"></script>
     <script src="voice.js?v=2.2"></script>
